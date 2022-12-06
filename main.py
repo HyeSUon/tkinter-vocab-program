@@ -8,6 +8,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from ScrollableFrame import *
 
+
 # 프레임 전환 구현 - 같은 위치에 여러 프레임을 겹쳐놓고 선택한 프레임을 맨 위로 올림.
 # 채점 - dict에 1대1 대응하는 double_dict를 만들어 영어, 한글 두개의 key값을 아무거나 줘도 일정한 value값이 나오도록 구현
 
@@ -215,7 +216,7 @@ class PageTwo(tk.Frame):
         self.btn_enter.grid(row=1, column=0, columnspan=2, pady=5)
 
         #제출하기 버튼
-        self.btn_enter = tk.Button(self.frm_buttons, text="Submit", width=10, command=self.save)
+        self.btn_enter = tk.Button(self.frm_buttons, text="Submit", width=10, command=self.scoring)
         self.btn_enter.grid(row=2, column=0, columnspan=2, pady=5)
 
         self.frm_buttons.grid(row=0, column=0, sticky="ns")
@@ -230,6 +231,17 @@ class PageTwo(tk.Frame):
         self.lbl_status.grid(column=0, columnspan=2, row=1, sticky="we")
 
     def save(self):
+
+        question_list = self.controller.app_data["question_list"] 
+        result_list = self.controller.app_data["result_list"]
+        double_dict = self.controller.app_data["double_dict"]
+        #------------------------------------------ excel로 세이브하는 코드 작성 -----------------------------
+        # 채점 결과가 들어있는 데이터: result_list, str 자료형으로, 정답인 경우 "O", 틀린 경우 "X"가 들어있음.
+        # result_list[4]가 틀린 경우 question_list[4]를 통해 문제를, double_dict[question_list[4]]를 통해 틀린 문제의 정답을 불러올 수 있음.
+        #-----------------------------------------------------------------------------------------------------
+        print(result_list)
+
+    def scoring(self):
         result = messagebox.askquestion("Submit", "정말로 제출하시겠습니까?")
         answer = self.controller.app_data["double_dict"]
         result_list = self.controller.app_data["result_list"]
@@ -248,8 +260,7 @@ class PageTwo(tk.Frame):
             self.controller.show_frame("StartPage")
         else:
             return
-        
-        print(result_list)
+        self.save()
 
     def update(self):
         question_list = self.controller.app_data["question_list"]
