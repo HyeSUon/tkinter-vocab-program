@@ -8,8 +8,8 @@ from tkinter import filedialog
 from tkinter import messagebox
 from ScrollableFrame import *
 
-isFirstLoad = True
-
+# 프레임 전환 구현 - 같은 위치에 여러 프레임을 겹쳐놓고 선택한 프레임을 맨 위로 올림.
+# 채점 - dict에 1대1 대응하는 double_dict를 만들어 영어, 한글 두개의 key값을 아무거나 줘도 일정한 value값이 나오도록 구현
 
 class SampleApp(tk.Tk):
 
@@ -17,10 +17,7 @@ class SampleApp(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         self.title_font = tkfont.Font(family='Helvetica', size=18, weight="bold", slant="italic")
         self.title("영단어 암기 프로그램")
-        # the container is where we'll stack a bunch of frames
-        # on top of each other, then the one we want visible
-        # will be raised above the others
-
+        # 다른 클래스(onePage, twoPage..)에서 참조 가능하도록 만든 data
         self.app_data = {"dict": {},
                          "double_dict": {},
                          "question_count": 0,
@@ -39,14 +36,12 @@ class SampleApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (StartPage, PageOne, PageTwo):
+        for F in (StartPage, PageOne, PageTwo): #각 클래스를 튜플로 묶어서 하나씩 실행
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
 
-            # put all of the pages in the same location;
-            # the one on the top of the stacking order
-            # will be the one that is visible.
+            # 모든 페이지를 같은 위치에 넣기
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame("StartPage")
@@ -55,11 +50,11 @@ class SampleApp(tk.Tk):
             if str(page.__class__.__name__) == classname:
                 return page
         return None
-    def show_frame(self, page_name):
+    def show_frame(self, page_name): 
         '''Show a frame for the given page name'''
         frame = self.frames[page_name]
         frame.update()
-        frame.tkraise()
+        frame.tkraise() # 선택한 프레임을 맨 위로 올리는 함수
 
 
 class StartPage(tk.Frame):
