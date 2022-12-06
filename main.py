@@ -153,7 +153,7 @@ class PageOne(tk.Frame):
         self.frm_buttons = tk.Frame(self, relief=tk.RAISED, bd=2)
 
         # 확인 버튼
-        self.btn_enter = tk.Button(self.frm_buttons, text="확인", width=10, command=lambda: controller.show_frame("StartPage"))
+        self.btn_enter = tk.Button(self.frm_buttons, text="확인", width=10, command=self.saveSetting)
         self.btn_enter.grid(row=1, column=0, columnspan=2, pady=5)
 
         self.frm_buttons.grid(row=0, column=0, sticky="ns")
@@ -197,7 +197,21 @@ class PageOne(tk.Frame):
 
     def update(self):
         self.lbl_number["text"] = "출제 수(max:"+ str(self.controller.app_data["word_count"])+"): "
+        self.ent_input.delete(0, tk.END)
         self.ent_input.insert(0, str(self.controller.app_data["question_count"]))
+    
+    def saveSetting(self):
+        try:
+            num = int(self.ent_input.get())
+        except:
+            messagebox.showwarning("경고", "올바른 값을 넣어주세요.")
+            return
+        if num > self.controller.app_data["word_count"] or num < 0:
+            messagebox.showwarning("경고", "올바른 값을 넣어주세요.")
+            return
+
+        self.controller.app_data["question_count"] = num
+        self.controller.show_frame("StartPage")
 
 class PageTwo(tk.Frame):
 
@@ -229,6 +243,7 @@ class PageTwo(tk.Frame):
         # 상태 메세지
         self.lbl_status = tk.Label(self, text="Status message", anchor="w")
         self.lbl_status.grid(column=0, columnspan=2, row=1, sticky="we")
+        
 
     def save(self):
 
@@ -250,6 +265,8 @@ class PageTwo(tk.Frame):
         if result == 'yes':
             entries = self.controller.app_data["entries"]
             for idx,entry in enumerate(entries):
+                if idx >= self.controller.app_data["question_count"]:
+                    break
                 try:
                     if answer[question_list[idx]] == entry.get():
                         result_list.append("O")
@@ -288,13 +305,17 @@ class PageTwo(tk.Frame):
             random.shuffle(question_list)
         entries = self.controller.app_data["entries"]
         for idx, text in enumerate(dict):
+            if idx >= self.controller.app_data["question_count"]:
+                break
             label = tk.Label(self.frm_scroll.scrollable_frame, text=question_list[idx])
             entry = tk.Entry(self.frm_scroll.scrollable_frame, width=50)
             label.grid(row=idx, column=0)
             entry.grid(row=idx, column=1)
             entries.append(entry)
-
-            
-
+            entry.bind("<Return>", self.nextWidget)
+    def nextWidget(self, event):
+        event.widget.tk_focusNext().focus()
+        return("break")
+        
 app = SampleApp()
 app.mainloop()
