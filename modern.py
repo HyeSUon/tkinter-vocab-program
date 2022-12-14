@@ -6,7 +6,10 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image
 from tkinter import filedialog
+from tkinter import messagebox
 from customScrollableFrame import *
+from openpyxl.styles import Font
+from openpyxl import Workbook
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -23,6 +26,7 @@ class App(customtkinter.CTk):
                          "name_list": [],
                          "entries": [],
                          "result_list": [],
+                         'answer_list': [],
         }
         self.title("영단어 Test")
         self.geometry("800x450")
@@ -115,14 +119,57 @@ class App(customtkinter.CTk):
 
         # 스크롤바
         self.frm_scroll = ScrollableFrame(self.second_frame)
-        self.frm_scroll.pack(expand=True)
+        self.frm_scroll.pack(expand=True, fill='y', pady=10)
+
+        #제출하기 버튼
+        self.btn_enter = ctk.CTkButton(self.second_frame, text="Submit", width=10, command=self.scoring)
+        self.btn_enter.pack()
 
 
         # create third frame
         self.third_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
 
+        # configure grid layout 2x1
+        self.frm_result = customtkinter.CTkFrame(self.third_frame)
+        self.frm_result.pack(fill ='both', pady=30)
+        self.btn_saveas = customtkinter.CTkButton(self.frm_result, text="Save as", command=self.save)
+        self.btn_saveas.pack(side='right', anchor='s', pady=30, padx=10)
+        self.resultbox = customtkinter.CTkTextbox(self.frm_result, width=450, height=400)
+        self.resultbox.pack(side='right',pady=10)
+
         # select default frame
         self.select_frame_by_name("home")
+
+
+
+    def scoring(self):
+        result = messagebox.askquestion("Submit", "정말로 제출하시겠습니까?")
+        answer = self.app_data["double_dict"]
+        result_list = self.app_data["result_list"]
+        question_list = self.app_data["question_list"]
+        answer_list = self.app_data['answer_list']
+        result_list.clear()
+        if result == 'yes':
+            if self.app_data['word_count'] == 0 or self.app_data['question_count'] == 0:
+                messagebox.showerror("경고", "문제 수가 충분하지 않습니다.")
+                return
+            answer_list.clear()
+            entries = self.app_data["entries"]
+            for idx,entry in enumerate(entries):
+                if idx >= self.app_data["question_count"]:
+                    break
+                answer_list.append(entry.get())
+                try:
+                    if answer[question_list[idx]] == entry.get():
+                        result_list.append("O")
+                    else:
+                        result_list.append("X")
+                except:
+                    result_list.append("X")
+            self.select_frame_by_name('frame_3')
+        else:
+            return
+        self.resultUpdate()
 
     def nextWidget(self, event):
         event.widget.tk_focusNext().focus()
@@ -148,6 +195,73 @@ class App(customtkinter.CTk):
             self.third_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.third_frame.grid_forget()
+
+    def save(self):
+        result_list = self.app_data['result_list']
+
+        if len(result_list) == 0:
+            messagebox.showerror("경고", "문제를 제출하고 눌러주세요.")
+            return
+
+        wb = Workbook()
+        sheet = wb.active
+        question_list = self.app_data["question_list"]
+        result_list = self.app_data['result_list']
+        answer_list = self.app_data['answer_list']
+        double_dict = self.app_data['double_dict']
+
+        sheet.cell(row=1, column=1).value ='문제'
+        sheet.cell(row=1, column=3).value = '입력'
+        sheet.cell(row=1, column=5).value = '정답'
+
+        for i in range(self.app_data['question_count']):
+            sheet.cell(row = i+2, column= 1).value= str(i+1) + ". " + question_list[i]
+            if result_list[i] == 'O':
+                sheet.cell(row=i+2, column=3).font = Font(color='008000')
+                sheet.cell(row= i+2, column=3).value = answer_list[i]
+            else:
+                sheet.cell(row=i+2, column=3).font = Font(color='FF0000', strike=True, bold=True)
+                if answer_list[i] == '':
+                    sheet.cell(row= i+2, column=3).value = "------"
+                else:
+                    sheet.cell(row= i+2, column=3).value = answer_list[i]
+                sheet.cell(row=i+2, column=5).font = Font(color='FF0000', bold=True)
+                sheet.cell(row=i+2, column=5).value = double_dict[question_list[i]]
+        filename = filedialog.asksaveasfilename(initialdir='/', title="Select folder",
+                                                initialfile='result',
+                                                defaultextension='.csv',
+                                                filetypes=(("CSV files", "*.csv"),
+                                                ("XLSX files", "*.xlsx")))
+        if filename is None or filename == '':
+            return
+        try:
+            wb.save(filename)
+        except:
+            messagebox.showerror("에러", "파일을 저장할 수 없습니다 \n(저장하려는 파일이 사용중인지 확인하세요.)")
+            return
+        messagebox.showinfo("정보", "저장 되었습니다.")
+
+
+    def resultUpdate(self):
+
+        question_list = self.app_data["question_list"] 
+        result_list = self.app_data["result_list"]
+        double_dict = self.app_data["double_dict"]
+        entries = self.app_data['entries']
+
+        self.resultbox.delete(0.0, tk.END)
+        self.resultbox.insert(tk.END, '---------------------------------------------------------------------------------------------------------------------------------------\n')
+        self.resultbox.insert(tk.END, "총 문제 수: " + str(self.app_data['question_count']) + '\n')
+        self.resultbox.insert(tk.END, "맞힌 수: ")
+        count = 0
+        for i in range(self.app_data['question_count']):
+            if result_list[i] == 'O':
+                count += 1
+        self.resultbox.insert(tk.END, str(count) + '\n')
+        self.resultbox.insert(tk.END, "틀린 수: ")
+        self.resultbox.insert(tk.END, str(self.app_data["question_count"] - count) + '\n')
+        self.resultbox.insert(tk.END, '---------------------------------------------------------------------------------------------------------------------------------------\n')
+        self.resultbox.insert(tk.END, '오답노트를 보려면 Save as... 버튼을 클릭하세요.')
 
     def open_input_dialog_event(self):
         self.dialog = customtkinter.CTkInputDialog(text="출제 수(max:"+ str(self.app_data["word_count"])+"): ", title="옵션", insert_text=str(self.app_data['question_count']))
@@ -181,6 +295,7 @@ class App(customtkinter.CTk):
         var_vocab = self.app_data["var_vocab"].get()
         dict = self.app_data["dict"]
 
+
         for widgets in self.frm_scroll.scrollable_frame.winfo_children():
             widgets.destroy()
 
@@ -200,6 +315,7 @@ class App(customtkinter.CTk):
         if self.app_data["word_shuffle"].get():
             random.shuffle(question_list)
         entries = self.app_data["entries"]
+        entries.clear()
         for idx, text in enumerate(dict):
             if idx >= self.app_data["question_count"]:
                 break
@@ -209,9 +325,8 @@ class App(customtkinter.CTk):
             entry.grid(row=idx, column=1, sticky='we')
             entries.append(entry)
             entry.bind("<Return>", self.nextWidget)
-
     def open_file(self):
-         # 기존에 있던 값들 모두 초기회
+         # 기존에 있던 값들 모두 초기화
         self.app_data["dict"].clear()
         self.app_data["word_count"] = 0
         self.textbox.configure(state='normal')
@@ -220,7 +335,7 @@ class App(customtkinter.CTk):
         fileName = filedialog.askopenfilenames(initialdir="/",\
             title = "파일을 선택 해 주세요", \
                 filetypes = [("Excel Files", "*csv"), ("Text Files", "*txt"), ("All Files", "*.*")])
-        if fileName == '':
+        if fileName == '' or fileName is None:
             return
         ext = os.path.splitext(fileName[0])[1]
         if ext == '.txt':
@@ -244,7 +359,6 @@ class App(customtkinter.CTk):
             self.app_data["word_count"] += 1
             self.textbox.insert('end', str(self.app_data["word_count"]) + ". " + key + ": " + value + '\n')
         self.app_data["question_count"] = self.app_data["word_count"]
-        print(self.app_data["word_count"])
 
         self.textbox.configure(state='disabled')
 

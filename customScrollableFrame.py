@@ -4,7 +4,7 @@ from tkinter import ttk
 class ScrollableFrame(ttk.Frame):
     def __init__(self, container, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
-        self.canvas = tk.Canvas(self, highlightthickness=0, bg='#2b2b2b', width=500, height=312)
+        self.canvas = tk.Canvas(self, highlightthickness=0, bg='#2b2b2b', width=500, height=500)
 
         # self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
 
@@ -13,7 +13,7 @@ class ScrollableFrame(ttk.Frame):
                                           bg_color = ('#dbdbdb', '#2b2b2b',)
                                         )
 
-        self.scrollable_frame = ctk.CTkFrame(self.canvas, width=412, height=212)
+        self.scrollable_frame = ctk.CTkFrame(self.canvas, width=412, height=500)
 
         self.scrollable_frame.bind("<Configure>", lambda *args, **kwargs: self.canvas.configure(
             scrollregion=self.canvas.bbox("all")))
